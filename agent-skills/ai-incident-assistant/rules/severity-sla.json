@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "classification_thresholds": {
+    "bug_probability_default": 0.7,
+    "duplicate_similarity_default": 0.8,
+    "llm_timeout_seconds": 10,
+    "llm_p95_target_seconds": 5,
+    "semantic_matching_p95_target_seconds": 2
+  },
+  "severity_order": ["Low", "Medium", "High", "Critical"],
+  "severity": {
+    "Critical": {
+      "criteria": [
+        "System is completely down",
+        "All users are affected",
+        "Payment or data integrity is affected"
+      ],
+      "initial_response_sla_minutes": 15,
+      "jira_priority": "Highest",
+      "sla_warning_when_remaining_minutes": 3
+    },
+    "High": {
+      "criteria": [
+        "Core function is broken",
+        "Many users are affected",
+        "No workaround is available"
+      ],
+      "initial_response_sla_minutes": 60,
+      "jira_priority": "High",
+      "sla_warning_when_remaining_minutes": 12
+    },
+    "Medium": {
+      "criteria": [
+        "Secondary function is affected",
+        "Some users are affected",
+        "Workaround is available"
+      ],
+      "initial_response_sla_minutes": 240,
+      "jira_priority": "Medium",
+      "sla_warning_when_remaining_minutes": 48
+    },
+    "Low": {
+      "criteria": [
+        "Minor issue",
+        "Limited impact",
+        "Core function is not affected"
+      ],
+      "initial_response_sla_minutes": 1440,
+      "business_hours_only": true,
+      "jira_priority": "Low",
+      "sla_warning_when_remaining_minutes": 288
+    }
+  },
+  "auto_escalation": {
+    "duplicate_reports": {
+      "condition": "same incident reported by at least 3 different group chats within 1 hour",
+      "action": "increase severity by one level",
+      "max_severity": "Critical",
+      "do_not_downgrade_human_override": true
+    }
+  },
+  "sla_escalation": {
+    "warning": {
+      "when": "20 percent of SLA time remains",
+      "target": "support group chat"
+    },
+    "breach_100_percent": {
+      "when": "SLA deadline reached and no first response",
+      "target": "responsible person and public support group"
+    },
+    "breach_150_percent": {
+      "when": "150 percent of SLA deadline reached and no first response",
+      "target": "Team Lead"
+    }
+  }
+}
+

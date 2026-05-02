@@ -1,0 +1,59 @@
+### IDE ###
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+### Build ###
+# Maven
+/target/
+
+# Gradle
+/build/
+.gradle/
+
+### Logs ###
+*.log
+logs/
+
+### OS ###
+# Windows
+Thumbs.db
+# Mac
+.DS_Store
+
+### Environment ###
+.env
+*.env
+
+### Application config (tuỳ chọn) ###
+# Nếu bạn không muốn push config chứa mật khẩu
+application.properties
+application.yml
+
+### Database ###
+*.db
+*.sqlite
+
+### Generated files ###
+*.class
+*.jar
+*.war
+*.ear
+
+### Temp ###
+tmp/
+temp/
+
+### Node (nếu có frontend trong project) ###
+node_modules/
+dist/

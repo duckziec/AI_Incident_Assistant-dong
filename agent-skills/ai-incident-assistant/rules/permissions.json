@@ -1,0 +1,179 @@
+{
+  "version": "1.0",
+  "source": "SRS_AI_Incident_Assistant_v1.0",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "principles": {
+    "least_privilege": true,
+    "deny_by_default": true,
+    "audit_side_effects": true,
+    "same_language_response": true,
+    "max_group_response_lines": 5
+  },
+  "roles": [
+    "customer",
+    "support_staff",
+    "engineer",
+    "team_lead",
+    "manager",
+    "admin",
+    "aia_bot",
+    "jira_system"
+  ],
+  "commands": {
+    "/bug": {
+      "aliases": ["/incident"],
+      "allowed_roles": ["customer", "support_staff", "engineer", "team_lead", "manager", "admin"],
+      "allowed_contexts": ["group_chat", "direct_message"],
+      "effect": "incident_intake",
+      "requires_confirmation": false,
+      "audit": true
+    },
+    "/report": {
+      "intent": "bug_intake",
+      "allowed_roles": ["customer", "support_staff", "engineer", "team_lead", "manager", "admin"],
+      "allowed_contexts": ["group_chat", "direct_message"],
+      "effect": "incident_intake",
+      "requires_confirmation": false,
+      "audit": true
+    },
+    "/status": {
+      "parameters": ["jira_issue_key"],
+      "allowed_roles": ["customer", "support_staff", "engineer", "team_lead", "manager", "admin"],
+      "allowed_contexts": ["group_chat", "direct_message"],
+      "access_condition": "customer can view incidents linked to their chat; internal roles can view incidents in their assigned project scope",
+      "effect": "read_incident_status",
+      "requires_confirmation": false,
+      "audit": false
+    },
+    "/report sla": {
+      "allowed_roles": ["support_staff", "manager"],
+      "optional_roles_by_org_policy": ["team_lead"],
+      "allowed_contexts": ["group_chat", "direct_message", "admin_console"],
+      "access_condition": "actor must belong to the support organization or configured project scope",
+      "effect": "read_sla_report",
+      "requires_confirmation": false,
+      "audit": true
+    },
+    "/suggest": {
+      "parameters": ["jira_issue_key"],
+      "allowed_roles": ["team_lead", "manager"],
+      "allowed_contexts": ["group_chat", "direct_message", "admin_console"],
+      "access_condition": "actor must manage the target project or support queue",
+      "effect": "resource_suggestion",
+      "requires_confirmation": false,
+      "audit": true
+    },
+    "/reassign": {
+      "parameters": ["jira_issue_key"],
+      "allowed_roles": ["team_lead", "manager"],
+      "allowed_contexts": ["group_chat", "direct_message", "admin_console"],
+      "access_condition": "actor must manage the target project or support queue",
+      "effect": "human_approved_assignment_change",
+      "requires_confirmation": true,
+      "audit": true
+    },
+    "/incidents": {
+      "allowed_roles": ["support_staff", "manager"],
+      "optional_roles_by_org_policy": ["team_lead"],
+      "allowed_contexts": ["group_chat", "direct_message", "admin_console"],
+      "access_condition": "actor must belong to the support organization or configured project scope",
+      "effect": "read_open_incidents",
+      "requires_confirmation": false,
+      "audit": false
+    },
+    "/config": {
+      "allowed_roles": ["admin"],
+      "allowed_contexts": ["admin_console", "direct_message"],
+      "access_condition": "actor must pass admin authentication and any configured MFA/session checks",
+      "effect": "read_or_write_config",
+      "requires_confirmation": true,
+      "audit": true
+    }
+  },
+  "automated_actions": {
+    "classify_message": {
+      "ai_allowed": true,
+      "conditions": ["webhook signature is valid", "message is text or supported attachment metadata"],
+      "audit": true
+    },
+    "ask_bug_confirmation": {
+      "ai_allowed": true,
+      "conditions": ["bug_probability is below threshold but message is ambiguous"],
+      "audit": true
+    },
+    "create_jira_issue": {
+      "ai_allowed": true,
+      "conditions": [
+        "bug_probability >= configured bug threshold, default 0.70, or user explicitly confirms",
+        "no duplicate incident found above configured duplicate threshold",
+        "Jira connection is healthy",
+        "message_id has not already been processed into another Jira issue"
+      ],
+      "forbidden_when": [
+        "webhook is unauthenticated",
+        "message is classified as non-bug",
+        "actor attempts to override Jira project config without admin permission"
+      ],
+      "audit": true
+    },
+    "update_duplicate_jira_issue": {
+      "ai_allowed": true,
+      "conditions": [
+        "semantic_similarity >= configured duplicate threshold, default 0.80",
+        "target Jira issue status is Open or In Progress",
+        "message_id is not already linked to the target issue"
+      ],
+      "audit": true
+    },
+    "send_sla_warning": {
+      "ai_allowed": true,
+      "conditions": [
+        "incident is open",
+        "20 percent of SLA time remains",
+        "first response has not been detected"
+      ],
+      "audit": true
+    },
+    "escalate_sla_breach": {
+      "ai_allowed": true,
+      "conditions": ["incident breached SLA", "first response has not been detected"],
+      "escalation_order": [
+        "direct reminder to responsible person if available",
+        "public group chat warning after 100 percent SLA",
+        "Team Lead alert after 150 percent SLA"
+      ],
+      "audit": true
+    },
+    "suggest_engineers": {
+      "ai_allowed": true,
+      "conditions": [
+        "requested by Team Lead or Manager using /suggest or /reassign",
+        "all assigned engineers are busy with incidents severity High or Critical",
+        "Critical incident is unassigned for at least 5 minutes"
+      ],
+      "output_limit": 3,
+      "audit": true
+    },
+    "assign_or_reassign_engineer": {
+      "ai_allowed": false,
+      "human_required_roles": ["team_lead", "manager"],
+      "reason": "SRS FR-F6-04 forbids automatic assignment. AI may only suggest.",
+      "audit": true
+    },
+    "change_system_config": {
+      "ai_allowed": false,
+      "human_required_roles": ["admin"],
+      "reason": "Configuration changes require Admin authorization and confirmation.",
+      "audit": true
+    }
+  },
+  "data_retention": {
+    "raw_message_content_days": 30,
+    "after_raw_retention_keep": ["metadata", "structured incident data", "audit events"],
+    "secrets_storage": {
+      "encryption": "AES-256",
+      "hard_code_allowed": false
+    }
+  }
+}
+
